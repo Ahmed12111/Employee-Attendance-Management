@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Register your attendance quickly — select your name and press the button." />
+  <title>HNU Attendance System — Register</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* Page-specific overrides */
+    .page-wrapper {
+      padding: var(--space-md);
+    }
+
+    .container {
+      max-width: 460px;
+    }
+
+    /* Employee info strip shown after successful submission */
+    .info-strip {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-glass);
+    }
+
+    .info-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-green  { background: var(--success); }
+    .dot-yellow { background: var(--warning); }
+    .dot-red    { background: var(--error); }
+    .dot-blue   { background: var(--accent); }
+
+    /* Reset timer bar */
+    .reset-bar-wrap {
+      display: none;
+      margin-top: var(--space-md);
+    }
+    .reset-bar-wrap.show { display: block; }
+
+    .reset-bar-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-align: right;
+    }
+
+    .reset-bar {
+      height: 3px;
+      background: var(--border-glass);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .reset-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width linear;
+    }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-decoration: none;
+      margin-bottom: var(--space-lg);
+      transition: color var(--transition-fast);
+    }
+    .back-link:hover { color: var(--accent); }
+
+    /* Detail chips after registration */
+    .detail-chips {
+      display: none;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
+    }
+    .detail-chips.show { display: flex; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-glass);
+      color: var(--text-secondary);
+    }
+
+    .chip-warning { color: var(--warning); border-color: rgba(245,158,11,0.3); background: var(--warning-bg); }
+    .chip-success { color: var(--success); border-color: rgba(34,197,94,0.3); background: var(--success-bg); }
+    .chip-error   { color: var(--error);   border-color: rgba(239,68,68,0.3);  background: var(--error-bg);   }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="container">
+
+      <!-- Back link -->
+      <a href="/" class="back-link" id="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back to Home
+      </a>
+
+      <div class="card">
+
+        <!-- Logo -->
+        <div class="logo-wrapper" style="margin-bottom: var(--space-lg);">
+          <div class="logo-icon" style="width:44px;height:44px;">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <span class="company-name" style="font-size:1rem;">HNU</span>
+            <span class="company-subtitle">Attendance System</span>
+          </div>
+        </div>
+
+        <!-- Live date & time -->
+        <div class="datetime-block">
+          <div class="time-display" id="live-time">--:--:--</div>
+          <div class="date-display" id="live-date">Loading date...</div>
+        </div>
+
+        <!-- Form -->
+        <form id="attendance-form" novalidate>
+          <div class="form-group">
+            <label for="employee-select">Select Your Name</label>
+            <select id="employee-select" name="employee_id" required>
+              <option value="" disabled selected>— Choose an employee —</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            id="submit-btn"
+            disabled
+          >
+            <span class="spinner"></span>
+            <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            <span class="btn-text">Register Attendance</span>
+          </button>
+        </form>
+
+        <!-- Result banner -->
+        <div class="result-banner" id="result-banner" role="alert" aria-live="polite"></div>
+
+        <!-- Detail chips (late / missing / overtime info) -->
+        <div class="detail-chips" id="detail-chips"></div>
+
+        <!-- Reset bar -->
+        <div class="reset-bar-wrap" id="reset-bar-wrap">
+          <div class="reset-bar-label" id="reset-label">Resetting in 5s...</div>
+          <div class="reset-bar">
+            <div class="reset-bar-fill" id="reset-bar-fill"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <p class="footer">
+        Working hours: 08:00 AM – 04:00 PM &nbsp;|&nbsp; Need help? Contact HR
+      </p>
+
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
