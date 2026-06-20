@@ -53,7 +53,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend assets (CSS, JS, images) at /static
+# Serve frontend assets (CSS, JS) at /static so HTML pages can load them
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 

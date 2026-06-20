@@ -26,7 +26,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 
 # ---------------------------------------------------------------------------
-# Page routes
+# Page routes — backend serves the HTML so QR codes and direct links work
 # ---------------------------------------------------------------------------
 
 
@@ -46,6 +46,11 @@ def attendance_page():
 def admin_page():
     """Serve the admin dashboard."""
     return FileResponse(FRONTEND_DIR / "admin.html")
+
+
+# ---------------------------------------------------------------------------
+# API routes
+# ---------------------------------------------------------------------------
 
 
 @router.get("/export/excel", tags=["Export"])
@@ -118,3 +123,16 @@ def today_attendance(db: Session = Depends(get_db)):
         .all()
     )
     return records
+
+
+@router.delete("/attendance/reset", tags=["Admin"])
+def reset_all_attendance(db: Session = Depends(get_db)):
+    """Wipe all attendance records. Only for admin use."""
+    try:
+        services.reset_attendance_data(db)
+        return JSONResponse(
+            status_code=200,
+            content={"success": True, "message": "All attendance records have been permanently deleted."}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reset data: {str(e)}")

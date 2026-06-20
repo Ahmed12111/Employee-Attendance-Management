@@ -349,3 +349,9 @@ def _write_header(ws) -> None:
 
     ws.row_dimensions[1].height = 24
     ws.auto_filter.ref = f"A1:H1"
+
+
+def reset_attendance_data(db: Session) -> None:
+    """Delete all attendance records from the database."""
+    db.query(Attendance).delete()
+    db.commit()

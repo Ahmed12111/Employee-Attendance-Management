@@ -226,8 +226,8 @@
     async function loadAll() {
       try {
         const [empRes, todayRes] = await Promise.all([
-          fetch('/employees'),
-          fetch('/attendance/today'),
+          fetch(`${window.API_BASE_URL || ''}/employees`),
+          fetch(`${window.API_BASE_URL || ''}/attendance/today`),
         ]);
 
         const employees = empRes.ok  ? await empRes.json()   : [];

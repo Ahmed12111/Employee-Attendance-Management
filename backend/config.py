@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     RESET_HOUR: int = 20
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost,http://localhost:8000"
+    CORS_ORIGINS: str = "*"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
