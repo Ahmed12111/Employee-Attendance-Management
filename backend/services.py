@@ -292,6 +292,7 @@ def generate_excel_report(db: Session) -> io.BytesIO:
             for row_idx, record in enumerate(month_records, start=2):
                 employee_name = employees.get(record.employee_id, f"ID_{record.employee_id}")
                 date_str = record.attendance_date.strftime("%Y-%m-%d")
+                day_str = record.attendance_date.strftime("%A")
                 check_in_str = record.check_in.strftime("%I:%M %p") if record.check_in else ""
                 check_out_str = record.check_out.strftime("%I:%M %p") if record.check_out else ""
                 status_str = record.attendance_status.value if record.attendance_status else ""
@@ -299,6 +300,7 @@ def generate_excel_report(db: Session) -> io.BytesIO:
                 row_data = [
                     employee_name,
                     date_str,
+                    day_str,
                     check_in_str,
                     check_out_str,
                     record.late_minutes or 0,
@@ -328,7 +330,7 @@ def _write_header(ws) -> None:
         return
 
     headers = [
-        ("Employee", 26), ("Date", 14), ("Check In", 14), ("Check Out", 14),
+        ("Employee", 26), ("Date", 14), ("Day", 12), ("Check In", 14), ("Check Out", 14),
         ("Late (min)", 14), ("Missing (min)", 14), ("Overtime (min)", 16), ("Status", 18),
     ]
     header_fill = PatternFill("solid", fgColor="1E3A5F")
@@ -348,7 +350,7 @@ def _write_header(ws) -> None:
         ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = width
 
     ws.row_dimensions[1].height = 24
-    ws.auto_filter.ref = f"A1:H1"
+    ws.auto_filter.ref = f"A1:I1"
 
 
 def reset_attendance_data(db: Session) -> None:

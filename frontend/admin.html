@@ -98,8 +98,31 @@
           </div>
         </div>
 
-        <!-- Heading -->
-        <h1 style="text-align: center;">Export Data</h1>
+        <!-- LOGIN VIEW -->
+        <div id="login-view">
+          <h1 style="text-align: center;">Admin Login</h1>
+          <p class="lead" style="text-align: center;">Please enter your credentials to access the dashboard.</p>
+          
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="form-control" placeholder="Enter username" style="width: 100%; padding: var(--space-md) var(--space-lg); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--text-primary); font-family: inherit; font-size: 1rem;" />
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter password" style="width: 100%; padding: var(--space-md) var(--space-lg); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); color: var(--text-primary); font-family: inherit; font-size: 1rem;" />
+          </div>
+
+          <button class="btn btn-primary" id="login-btn">
+            <span class="btn-text">Log In</span>
+          </button>
+          
+          <div id="login-result" class="result-banner"></div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" style="display: none;">
+          <h1 style="text-align: center;">Export Data</h1>
         <p class="lead" style="text-align: center;">
           Download the automatically generated monthly attendance report in Excel format.
         </p>
@@ -123,6 +146,11 @@
           Reset All Attendance Data
         </button>
 
+        <div style="text-align: center; margin-top: var(--space-xl);">
+          <a href="#" id="logout-btn" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem;">Log Out</a>
+        </div>
+        </div>
+
       </div>
 
       <p class="footer">
@@ -134,19 +162,103 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    document.getElementById('reset-btn').addEventListener('click', async () => {
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginResult = document.getElementById('login-result');
+    const downloadBtn = document.getElementById('download-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // Check if already logged in
+    const existingToken = sessionStorage.getItem('adminToken');
+    if (existingToken) {
+      showDashboard(existingToken);
+    }
+
+    function showDashboard(token) {
+      loginView.style.display = 'none';
+      dashboardView.style.display = 'block';
+      // Append token to download link
+      downloadBtn.href = `/export/excel?token=${encodeURIComponent(token)}`;
+    }
+
+    function showLogin() {
+      sessionStorage.removeItem('adminToken');
+      dashboardView.style.display = 'none';
+      loginView.style.display = 'block';
+      usernameInput.value = '';
+      passwordInput.value = '';
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        loginResult.textContent = 'Please enter both username and password.';
+        loginResult.className = 'result-banner show error';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginResult.className = 'result-banner';
+
+      try {
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          sessionStorage.setItem('adminToken', data.token);
+          showDashboard(data.token);
+        } else {
+          loginResult.textContent = data.message || 'Login failed.';
+          loginResult.className = 'result-banner show error';
+        }
+      } catch (err) {
+        loginResult.textContent = 'Network error. Could not connect.';
+        loginResult.className = 'result-banner show error';
+      } finally {
+        loginBtn.disabled = false;
+      }
+    });
+
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLogin();
+    });
+
+    resetBtn.addEventListener('click', async () => {
       const confirmed = confirm("⚠️ WARNING: This will permanently delete ALL attendance records for all employees.\n\nAre you absolutely sure you want to continue?");
       if (!confirmed) return;
 
-      const btn = document.getElementById('reset-btn');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = 'Resetting...';
-      btn.disabled = true;
+      const token = sessionStorage.getItem('adminToken');
+      if (!token) {
+        showLogin();
+        return;
+      }
+
+      const originalText = resetBtn.innerHTML;
+      resetBtn.innerHTML = 'Resetting...';
+      resetBtn.disabled = true;
 
       try {
-        const res = await fetch('/attendance/reset', { method: 'DELETE' });
-        const data = await res.json();
+        const res = await fetch(`/attendance/reset?token=${encodeURIComponent(token)}`, { method: 'DELETE' });
         
+        if (res.status === 401) {
+            alert("Session expired. Please log in again.");
+            showLogin();
+            return;
+        }
+
+        const data = await res.json();
         if (data.success) {
           alert("✅ Success: " + data.message);
         } else {
@@ -155,8 +267,8 @@
       } catch (err) {
         alert("❌ Network Error: Could not connect to the server.");
       } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        resetBtn.innerHTML = originalText;
+        resetBtn.disabled = false;
       }
     });
   </script>

@@ -7,6 +7,7 @@ handles both the API and the static HTML files.
 
 from pathlib import Path
 from datetime import date
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, JSONResponse
@@ -14,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import Attendance
-from backend.schemas import AttendanceCreate, AttendanceOut, AttendanceResponse, EmployeeOut
+from backend.schemas import AttendanceCreate, AttendanceOut, AttendanceResponse, EmployeeOut, LoginRequest
 from backend import services
 from backend.services import is_day_closed, egypt_today
 from backend.gps import validate_location
@@ -52,9 +53,22 @@ def admin_page():
 # API routes
 # ---------------------------------------------------------------------------
 
+def verify_token(token: Optional[str] = None):
+    if not token or token != settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid or missing authentication token")
+    return token
+
+
+@router.post("/admin/login", tags=["Admin"])
+def admin_login(payload: LoginRequest):
+    """Authenticate admin and return a token."""
+    if payload.username == settings.ADMIN_USERNAME and payload.password == settings.ADMIN_PASSWORD:
+        return JSONResponse(content={"success": True, "token": settings.ADMIN_PASSWORD})
+    return JSONResponse(status_code=401, content={"success": False, "message": "Invalid username or password"})
+
 
 @router.get("/export/excel", tags=["Export"])
-def export_excel(db: Session = Depends(get_db)):
+def export_excel(token: Optional[str] = Depends(verify_token), db: Session = Depends(get_db)):
     """Download the dynamically generated Attendance.xlsx file."""
     try:
         stream = services.generate_excel_report(db)
@@ -126,7 +140,7 @@ def today_attendance(db: Session = Depends(get_db)):
 
 
 @router.delete("/attendance/reset", tags=["Admin"])
-def reset_all_attendance(db: Session = Depends(get_db)):
+def reset_all_attendance(token: Optional[str] = Depends(verify_token), db: Session = Depends(get_db)):
     """Wipe all attendance records. Only for admin use."""
     try:
         services.reset_attendance_data(db)

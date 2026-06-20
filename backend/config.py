@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: str = "supersecretkey"  # Change this in production
     
+    # Admin Auth
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "admin123"
+    
     # Database
     DATABASE_URL: str = "sqlite:///./attendance.db"
 

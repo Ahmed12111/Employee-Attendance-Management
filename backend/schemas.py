@@ -62,3 +62,13 @@ class AttendanceResponse(BaseModel):
     data: Optional[AttendanceOut] = None
     distance: Optional[float] = None
     allowed_radius: Optional[int] = None
+
+
+# ---------------------------------------------------------------------------
+# Admin
+# ---------------------------------------------------------------------------
+
+class LoginRequest(BaseModel):
+    """Admin login payload."""
+    username: str
+    password: str
